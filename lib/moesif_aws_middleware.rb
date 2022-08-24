@@ -148,18 +148,9 @@ module MoesifAwsLambda
       end_time = Time.now.utc.iso8601(3)
 
       process_send = lambda do
-        req = Rack::Request.new(env)
-        complex_copy = env.dup
+        event_copy = event.dup
 
-        # Filter hash to only have keys of type string
-        complex_copy = complex_copy.select { |k, v| k.is_a? String }
-
-        req_headers = {}
-        complex_copy.select {|k,v| k.start_with?('HTTP_', 'CONTENT_') }.each do |key, val|
-          new_key = key.sub(/^HTTP_/, '')
-          new_key = new_key.sub('_', '-')
-          req_headers[new_key] = val
-        end
+        req_headers = getLambdaRequestHeaders(event, context)
 
         req_body_string = req.body.read
         req.body.rewind
@@ -185,9 +176,12 @@ module MoesifAwsLambda
         end
 
         event_req = MoesifApi::EventRequestModel.new()
+
+        # TODO: fill below with event and context.
         event_req.time = start_time
-        event_req.uri = req.url
-        event_req.verb = req.request_method
+        event_req.uri = build_uri(event, context)
+        event_req.verb = event[""][""]
+        # to do above.
 
         if @api_version
           event_req.api_version = @api_version
@@ -222,13 +216,18 @@ module MoesifAwsLambda
           headers["X-Moesif-Transaction-Id"] = transaction_id
         end
 
-        event_req.ip_address = get_client_address(req.env)
-        event_req.headers = req_headers
-        event_req.body = req_body
-        event_req.transfer_encoding = req_body_transfer_encoding
+        # TODO: extract below from eon
+        event_req.ip_address = get_client_address(event, context)
+        event_req.headers = get_req_headers(event, context)
+        event_req.body = event.body
+        event_req.transfer_encoding = event.isBase64Encoded ? 'base64' : 'json'
 
+        # RESPONSEE
         event_rsp = MoesifApi::EventResponseModel.new()
         event_rsp.time = end_time
+
+        # TODO:
+        # extract below from lambda_result
         event_rsp.status = status
         event_rsp.headers = rsp_headers
         event_rsp.body = rsp_body
@@ -241,22 +240,32 @@ module MoesifAwsLambda
 
         if @identify_user
           @moesif_helpers.log_debug "calling identify user proc"
-          event_model.user_id = @identify_user.call(env, headers, body)
+          event_model.user_id = @identify_user.call(event, context, lambda_result)
         end
 
         if @identify_company
           @moesif_helpers.log_debug "calling identify company proc"
-          event_model.company_id = @identify_company.call(env, headers, body)
+          event_model.company_id = @identify_company.call(event, context, lambda_result)
         end
 
         if @get_metadata
           @moesif_helpers.log_debug "calling get_metadata proc"
-          event_model.metadata = @get_metadata.call(env, headers, body)
+          event_model.metadata = @get_metadata.call(event, context, lambda_result)
+        else
+          ## get default metadata from context object?
+          # if context.aws_request_id and context.function_name and 'requestContext' in event:
+          #   event.metadata = {
+          #       'trace_id': str(context.aws_request_id),
+          #       'function_name': context.function_name,
+          #       'request_context': event['requestContext'],
+          #       'context': context
+          #   }
+          # end
         end
 
         if @identify_session
           @moesif_helpers.log_debug "calling identify session proc"
-          event_model.session_token = @identify_session.call(env, headers, body)
+          event_model.session_token = @identify_session.call(event, context, lambda_result)
         end
         if @mask_data
           @moesif_helpers.log_debug "calling mask_data proc"
@@ -270,13 +279,12 @@ module MoesifAwsLambda
         @events_queue << event_model
         @moesif_helpers.log_debug("Event added to the queue ")
         start_worker()
-
       end
 
       should_skip = false
 
       if @skip
-        if @skip.call(env, headers, body)
+        if @skip.call(event, context, lambda_result)
           should_skip = true;
         end
       end
