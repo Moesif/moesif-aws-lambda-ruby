@@ -4,11 +4,12 @@ require 'time'
 require 'base64'
 require 'zlib'
 require 'stringio'
-require_relative './client_ip.rb'
+
 require_relative './app_config.rb'
 require_relative './update_user.rb'
 require_relative './update_company.rb'
 require_relative './moesif_helpers.rb'
+require_relative './lambda_utils.rb'
 
 module MoesifAwsLambda
 
@@ -139,7 +140,23 @@ module MoesifAwsLambda
     end
 
     def handle(event:, context:)
-      start_time = Time.now.utc.iso8601(3)
+
+      payload_format_version_1_0 = event["version"] == "1.0"
+
+      # Request Time
+      if payload_format_version_1_0
+        epoch = event.dig('requestContext', 'requestTimeEpoch')
+      else
+        epoch = event.dig('requestContext', 'timeEpoch')
+      end
+      if epoch.nil?
+        start_time = Time.now.utc.iso8601(3)
+      else
+        # divide by 1000 to preserve the milliseconds
+        start_time = Time.at(epoch / 1000.0).utc.iso8601(3)
+      end
+      # preserve request headers here in case it is changed down stream.
+      req_headers = get_request_headers(event, context, payload_format_version_1_0)
 
       @moesif_helpers.log_debug('Calling Moesif middleware')
 
@@ -148,39 +165,27 @@ module MoesifAwsLambda
       end_time = Time.now.utc.iso8601(3)
 
       process_send = lambda do
-        event_copy = event.dup
+        # if @log_body
+        #   if req_body_string && req_body_string.length != 0
+        #     req_body, req_body_transfer_encoding = parse_body(req_body_string, transform_headers(req_headers))
+        #   end
+        # end
+        # rsp_body_string = get_response_body(body);
+        # rsp_body_transfer_encoding = nil
+        # rsp_body = nil
 
-        req_headers = getLambdaRequestHeaders(event, context)
-
-        req_body_string = req.body.read
-        req.body.rewind
-        req_body_transfer_encoding = nil
-        req_body = nil
-
-        if @log_body
-          if req_body_string && req_body_string.length != 0
-            req_body, req_body_transfer_encoding = parse_body(req_body_string, transform_headers(req_headers))
-          end
-        end
-
-        rsp_headers = headers.dup
-
-        rsp_body_string = get_response_body(body);
-        rsp_body_transfer_encoding = nil
-        rsp_body = nil
-
-        if @log_body
-          if rsp_body_string && rsp_body_string.length != 0
-            rsp_body, rsp_body_transfer_encoding = parse_body(rsp_body_string, transform_headers(rsp_headers))
-          end
-        end
+        # if @log_body
+        #   if rsp_body_string && rsp_body_string.length != 0
+        #     rsp_body, rsp_body_transfer_encoding = parse_body(rsp_body_string, transform_headers(rsp_headers))
+        #   end
+        # end
 
         event_req = MoesifApi::EventRequestModel.new()
 
         # TODO: fill below with event and context.
         event_req.time = start_time
-        event_req.uri = build_uri(event, context)
-        event_req.verb = event[""][""]
+        event_req.uri = build_uri(event, context, payload_format_version_1_0)
+        event_req.verb = get_request_verb(event, context, payload_format_version_1_0)
         # to do above.
 
         if @api_version
@@ -216,11 +221,14 @@ module MoesifAwsLambda
           headers["X-Moesif-Transaction-Id"] = transaction_id
         end
 
-        # TODO: extract below from eon
-        event_req.ip_address = get_client_address(event, context)
-        event_req.headers = get_req_headers(event, context)
-        event_req.body = event.body
-        event_req.transfer_encoding = event.isBase64Encoded ? 'base64' : 'json'
+        # TODO: extract below from event and context
+        event_req.ip_address = get_ip_address(event, context, payload_format_version_1_0)
+        event_req.headers = req_headers
+
+        if @log_body
+          event_req.body = event.body
+          event_req.transfer_encoding = event.isBase64Encoded ? 'base64' : 'json'
+        end
 
         # RESPONSEE
         event_rsp = MoesifApi::EventResponseModel.new()
