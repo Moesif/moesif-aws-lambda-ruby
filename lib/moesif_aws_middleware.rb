@@ -227,7 +227,7 @@ module MoesifAwsLambda
 
         if @log_body
           event_req.body = event.body
-          event_req.transfer_encoding = event.isBase64Encoded ? 'base64' : 'json'
+          event_req.transfer_encoding = event["isBase64Encoded"] ? 'base64' : 'json'
         end
 
         # RESPONSEE
@@ -236,10 +236,15 @@ module MoesifAwsLambda
 
         # TODO:
         # extract below from lambda_result
-        event_rsp.status = status
+        status, rsp_headers, rsp_body, rsp_body_transfer_encoding = get_response_info_from_lambda_result(lambda_result)
+
+        event_rsp.status = response_
         event_rsp.headers = rsp_headers
-        event_rsp.body = rsp_body
-        event_rsp.transfer_encoding = rsp_body_transfer_encoding
+
+        if @log_body
+          event_rsp.body = rsp_body
+          event_rsp.transfer_encoding = rsp_body_transfer_encoding
+        end
 
         event_model = MoesifApi::EventModel.new()
         event_model.request = event_req
@@ -261,14 +266,12 @@ module MoesifAwsLambda
           event_model.metadata = @get_metadata.call(event, context, lambda_result)
         else
           ## get default metadata from context object?
-          # if context.aws_request_id and context.function_name and 'requestContext' in event:
-          #   event.metadata = {
-          #       'trace_id': str(context.aws_request_id),
-          #       'function_name': context.function_name,
-          #       'request_context': event['requestContext'],
-          #       'context': context
-          #   }
-          # end
+          event.metadata = {
+              "trace_id" => context["aws_request_id"].to_s,
+              "function_name" => context["function_name"],
+              "request_context" => event["requestContext"],
+              "context" => context
+          }
         end
 
         if @identify_session
