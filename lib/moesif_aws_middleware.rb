@@ -5,7 +5,6 @@ require 'base64'
 require 'zlib'
 require 'stringio'
 
-require_relative './app_config.rb'
 require_relative './update_user.rb'
 require_relative './update_company.rb'
 require_relative './moesif_helpers.rb'
@@ -30,13 +29,9 @@ module MoesifAwsLambda
       @mask_data = options['mask_data']
       @skip = options['skip']
       @debug = options['debug']
-      @app_config = AppConfig.new(@debug)
       @moesif_helpers = MoesifHelpers.new(@debug)
-      @config = @app_config.get_config(@api_controller)
-      @config_etag = nil
       @last_config_download_time = Time.now.utc
       @last_worker_run = Time.now.utc
-      @config_dict = Hash.new
       @disable_transaction_id = options['disable_transaction_id'] || false
       @log_body = options.fetch('log_body', true)
       @batch_size = options['batch_size'] || 25
