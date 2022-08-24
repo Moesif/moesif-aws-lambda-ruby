@@ -1,5 +1,4 @@
 
-
 def build_uri(event, context, payload_format_version_1_0)
   protocol = (event["headers"] || {}).fetch("X-Forwarded-Proto", event["headers"].fetch("x-forwarded-proto", "http")) + "://"
   host = (event["headers"] || {}).fetch("Host", event["headers"].get("host", "localhost"))
@@ -22,27 +21,31 @@ def build_uri(event, context, payload_format_version_1_0)
   uri
 end
 
-
-def get_request_verb(event, context)
-
-
+def get_request_verb(event, context, payload_format_version_1_0)
+  verb = event.dig("requestContext", "http", "method") || "GET"
+  if payload_format_version_1_0
+    verb = event.fetch("httpMethod", "GET");
+  verb
 end
 
-def get_request_headers(event, context)
-
-  req_headers = {}
-  try:
-      if 'headers' in event:
-          req_headers = APIHelper.json_deserialize(event['headers'])
-  except Exception as e:
-      if self.DEBUG:
-          print('MOESIF Error while fetching request headers')
-          print(e)
-
+def get_request_headers(event, context, payload_format_version_1_0)
+  req_headers = event.headers
+  if payload_format_version_1_0
+    if event.include? "multiValueHeaders"
+      req_headers = (event['multiValueHeaders'] || {}).transform_values do |value|
+        value.join("\n")
+      end
+    end
   req_headers
 end
 
-def get_ip_address(event, context):
+def get_ip_address(event, context, payload_format_version_1_0):
+  ip_address = event.dig('requestContext', 'http', 'sourceIp')
+  if payload_format_version_1_0
+    ip_address = event.dig('requestContext', 'identity', 'sourceIp')
+  end
+  ip_address
+end
 
 def process_body(body_wrapper):
   """Function to process body"""
@@ -69,13 +72,5 @@ def process_body(body_wrapper):
           return str(body, "utf-8"), 'base64'
       else:
           return str(body), 'base64'
-  body, transfer_encoding
-end
-
-def get_ip_address(event, context):
-
-
-
-def get_response(labmda_result)
-
+  [body, transfer_encoding]
 end
