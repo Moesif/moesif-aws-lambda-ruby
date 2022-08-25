@@ -10,8 +10,8 @@ require_relative "./update_company.rb"
 require_relative "./moesif_helpers.rb"
 require_relative "./lambda_utils.rb"
 
-module MoesifAwsLambda
-  class MoesifMiddleware
+module Moesif
+  class MoesifAwsMiddleware
     def initialize(handler, options = {})
       @handler = handler
       if not options["application_id"]
@@ -158,21 +158,6 @@ module MoesifAwsLambda
       end_time = Time.now.utc.iso8601(3)
 
       process_send = lambda do
-        # if @log_body
-        #   if req_body_string && req_body_string.length != 0
-        #     req_body, req_body_transfer_encoding = parse_body(req_body_string, transform_headers(req_headers))
-        #   end
-        # end
-        # rsp_body_string = get_response_body(body);
-        # rsp_body_transfer_encoding = nil
-        # rsp_body = nil
-
-        # if @log_body
-        #   if rsp_body_string && rsp_body_string.length != 0
-        #     rsp_body, rsp_body_transfer_encoding = parse_body(rsp_body_string, transform_headers(rsp_headers))
-        #   end
-        # end
-
         event_req = MoesifApi::EventRequestModel.new()
 
         # TODO: fill below with event and context.
