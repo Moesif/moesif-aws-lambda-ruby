@@ -1,41 +1,40 @@
-require 'moesif_api'
-require 'json'
-require 'time'
-require 'base64'
-require 'zlib'
-require 'stringio'
+require "moesif_api"
+require "json"
+require "time"
+require "base64"
+require "zlib"
+require "stringio"
 
-require_relative './update_user.rb'
-require_relative './update_company.rb'
-require_relative './moesif_helpers.rb'
-require_relative './lambda_utils.rb'
+require_relative "./update_user.rb"
+require_relative "./update_company.rb"
+require_relative "./moesif_helpers.rb"
+require_relative "./lambda_utils.rb"
 
 module MoesifAwsLambda
-
   class MoesifMiddleware
-    def initialize handler, options = {}
+    def initialize(handler, options = {})
       @handler = handler
-      if not options['application_id']
-        raise 'application_id required for Moesif Middleware'
+      if not options["application_id"]
+        raise "application_id required for Moesif Middleware"
       end
-      @api_client = MoesifApi::MoesifAPIClient.new(options['application_id'])
+      @api_client = MoesifApi::MoesifAPIClient.new(options["application_id"])
       @api_controller = @api_client.api
 
-      @api_version = options['api_version']
-      @identify_user = options['identify_user']
-      @identify_company = options['identify_company']
-      @get_metadata = options['get_metadata']
-      @identify_session = options['identify_session']
-      @mask_data = options['mask_data']
-      @skip = options['skip']
-      @debug = options['debug']
+      @api_version = options["api_version"]
+      @identify_user = options["identify_user"]
+      @identify_company = options["identify_company"]
+      @get_metadata = options["get_metadata"]
+      @identify_session = options["identify_session"]
+      @mask_data = options["mask_data"]
+      @skip = options["skip"]
+      @debug = options["debug"]
       @moesif_helpers = MoesifHelpers.new(@debug)
       @last_config_download_time = Time.now.utc
       @last_worker_run = Time.now.utc
-      @disable_transaction_id = options['disable_transaction_id'] || false
-      @log_body = options.fetch('log_body', true)
-      @batch_size = options['batch_size'] || 25
-      @batch_max_time = options['batch_max_time'] || 2
+      @disable_transaction_id = options["disable_transaction_id"] || false
+      @log_body = options.fetch("log_body", true)
+      @batch_size = options["batch_size"] || 25
+      @batch_max_time = options["batch_max_time"] || 2
       @events_queue = Queue.new
       @event_response_config_etag = nil
       start_worker()
@@ -58,7 +57,7 @@ module MoesifAwsLambda
     end
 
     def start_with_json(body)
-      body.start_with?('{') || body.start_with?('[')
+      body.start_with?("{") || body.start_with?("[")
     end
 
     def decompress_body(body)
@@ -66,11 +65,11 @@ module MoesifAwsLambda
     end
 
     def transform_headers(headers)
-      Hash[headers.map { |k, v| [k.downcase, v]}]
+      Hash[headers.map { |k, v| [k.downcase, v] }]
     end
 
     def base64_encode_body(body)
-      return Base64.encode64(body), 'base64'
+      return Base64.encode64(body), "base64"
     end
 
     def @moesif_helpers.log_debug(message)
@@ -83,11 +82,11 @@ module MoesifAwsLambda
       begin
         if (body.instance_of?(Hash) || body.instance_of?(Array))
           parsed_body = body
-          transfer_encoding = 'json'
+          transfer_encoding = "json"
         elsif start_with_json(body)
           parsed_body = JSON.parse(body)
-          transfer_encoding = 'json'
-        elsif headers.key?('content-encoding') && ((headers['content-encoding'].downcase).include? "gzip")
+          transfer_encoding = "json"
+        elsif headers.key?("content-encoding") && ((headers["content-encoding"].downcase).include? "gzip")
           uncompressed_string = decompress_body(body)
           parsed_body, transfer_encoding = base64_encode_body(uncompressed_string)
         else
@@ -104,16 +103,16 @@ module MoesifAwsLambda
         @last_worker_run = Time.now.utc
         loop do
           begin
-            until @events_queue.empty? do
-                batch_events = []
-                until batch_events.size == @batch_size || @events_queue.empty? do
-                  batch_events << @events_queue.pop
-                end
-                @moesif_helpers.log_debug("Sending #{batch_events.size.to_s} events to Moesif")
-                event_api_response =  @api_controller.create_events_batch(batch_events)
-                @event_response_config_etag = event_api_response[:x_moesif_config_etag]
-                @moesif_helpers.log_debug(event_api_response.to_s)
-                @moesif_helpers.log_debug("Events successfully sent to Moesif")
+            until @events_queue.empty?
+              batch_events = []
+              until batch_events.size == @batch_size || @events_queue.empty?
+                batch_events << @events_queue.pop
+              end
+              @moesif_helpers.log_debug("Sending #{batch_events.size.to_s} events to Moesif")
+              event_api_response = @api_controller.create_events_batch(batch_events)
+              @event_response_config_etag = event_api_response[:x_moesif_config_etag]
+              @moesif_helpers.log_debug(event_api_response.to_s)
+              @moesif_helpers.log_debug("Events successfully sent to Moesif")
             end
 
             if @events_queue.empty?
@@ -135,14 +134,13 @@ module MoesifAwsLambda
     end
 
     def handle(event:, context:)
-
       payload_format_version_1_0 = event["version"] == "1.0"
 
       # Request Time
       if payload_format_version_1_0
-        epoch = event.dig('requestContext', 'requestTimeEpoch')
+        epoch = event.dig("requestContext", "requestTimeEpoch")
       else
-        epoch = event.dig('requestContext', 'timeEpoch')
+        epoch = event.dig("requestContext", "timeEpoch")
       end
       if epoch.nil?
         start_time = Time.now.utc.iso8601(3)
@@ -153,9 +151,9 @@ module MoesifAwsLambda
       # preserve request headers here in case it is changed down stream.
       req_headers = get_request_headers(event, context, payload_format_version_1_0)
 
-      @moesif_helpers.log_debug('Calling Moesif middleware')
+      @moesif_helpers.log_debug("Calling Moesif middleware")
 
-      lambda_result = @handler.call(event: event, context: context);
+      lambda_result = @handler.call(event: event, context: context)
 
       end_time = Time.now.utc.iso8601(3)
 
@@ -222,7 +220,7 @@ module MoesifAwsLambda
 
         if @log_body
           event_req.body = event.body
-          event_req.transfer_encoding = event["isBase64Encoded"] ? 'base64' : 'json'
+          event_req.transfer_encoding = event["isBase64Encoded"] ? "base64" : "json"
         end
 
         # RESPONSEE
@@ -262,10 +260,10 @@ module MoesifAwsLambda
         else
           ## get default metadata from context object?
           event.metadata = {
-              "trace_id" => context["aws_request_id"].to_s,
-              "function_name" => context["function_name"],
-              "request_context" => event["requestContext"],
-              "context" => context
+            "trace_id" => context["aws_request_id"].to_s,
+            "function_name" => context["function_name"],
+            "request_context" => event["requestContext"],
+            "context" => context,
           }
         end
 
@@ -281,7 +279,7 @@ module MoesifAwsLambda
         @moesif_helpers.log_debug "sending data to moesif"
         @moesif_helpers.log_debug event_model.to_json
 
-            # Add Event to the queue
+        # Add Event to the queue
         @events_queue << event_model
         @moesif_helpers.log_debug("Event added to the queue ")
         start_worker()
@@ -291,7 +289,7 @@ module MoesifAwsLambda
 
       if @skip
         if @skip.call(event, context, lambda_result)
-          should_skip = true;
+          should_skip = true
         end
       end
 
@@ -299,12 +297,12 @@ module MoesifAwsLambda
         begin
           process_send.call
         rescue => exception
-          @moesif_helpers.log_debug 'Error while logging event - '
+          @moesif_helpers.log_debug "Error while logging event - "
           @moesif_helpers.log_debug exception.to_s
           @moesif_helpers.log_debug exception.backtrace
         end
       else
-         @moesif_helpers.log_debug "Skipped Event using should_skip configuration option."
+        @moesif_helpers.log_debug "Skipped Event using should_skip configuration option."
       end
 
       lambda_result
@@ -318,6 +316,5 @@ module MoesifAwsLambda
       body = body.inject("") { |i, a| i << a } if (body.respond_to?(:each) && body.respond_to?(:inject))
       body.to_s
     end
-
   end
 end
