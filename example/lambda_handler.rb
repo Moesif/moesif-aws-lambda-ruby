@@ -1,10 +1,21 @@
 require "json"
+require_relative "../lib/moesif_aws_middleware";
 
 def my_handler(event:, context:)
   { event: JSON.generate(event), context: JSON.generate(context.inspect), my_test: 12342 }
 end
 
 puts "here"
+
+def test_new()
+  created_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
+    "application_id" => '12341241241242'
+  })
+
+  created_middleware.echo_me()
+end
+
+test_new()
 
 def middleware_new(hand, options)
   puts hand

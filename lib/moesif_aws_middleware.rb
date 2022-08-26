@@ -29,7 +29,6 @@ module Moesif
       @skip = options["skip"]
       @debug = options["debug"]
       @moesif_helpers = MoesifHelpers.new(@debug)
-      @last_config_download_time = Time.now.utc
       @last_worker_run = Time.now.utc
       @disable_transaction_id = options["disable_transaction_id"] || false
       @log_body = options.fetch("log_body", true)
@@ -38,6 +37,10 @@ module Moesif
       @events_queue = Queue.new
       @event_response_config_etag = nil
       start_worker()
+    end
+
+    def echo_me
+      puts 'echo me'
     end
 
     def update_user(user_profile)
