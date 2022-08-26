@@ -7,7 +7,7 @@ end
 
 puts "here"
 
-def test_new()
+def wrapped_handler()
   created_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
     "application_id" => '12341241241242'
   })
