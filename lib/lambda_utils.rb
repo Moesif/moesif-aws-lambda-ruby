@@ -32,7 +32,7 @@ def get_request_verb(event, context, payload_format_version_1_0)
 end
 
 def get_request_headers(event, context, payload_format_version_1_0)
-  req_headers = event.headers
+  req_headers = event["headers"] || {}
   if payload_format_version_1_0
     if event.include? "multiValueHeaders"
       req_headers = (event["multiValueHeaders"] || {}).transform_values do |value|

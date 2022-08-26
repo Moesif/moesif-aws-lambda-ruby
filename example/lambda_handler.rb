@@ -7,15 +7,19 @@ end
 
 puts "here"
 
-def wrapped_handler()
-  created_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
-    "application_id" => '12341241241242'
-  })
+$moesif_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
+  "application_id" => '12341241241242'
+})
 
-  created_middleware.echo_me()
+def wrapped_handler(event:, context:)
+  $moesif_middleware.echo_me()
+  $moesif_middleware.handle(event: event, context: context);
 end
 
-test_new()
+result = wrapped_handler(event: { "test": "1234" }, context: { inspect: "foobar"})
+
+puts "final results is"
+puts JSON.generate(result);
 
 def middleware_new(hand, options)
   puts hand
@@ -26,37 +30,3 @@ def middleware_new(hand, options)
     result
   }
 end
-
-puts "helloword"
-
-my_var = 5
-
-test_scope = Proc.new {
-  puts "in test scope"
-  puts my_var
-}
-
-test_scope.call()
-
-def final_handler(event:, context:)
-  puts "final handler called"
-  new_proc = middleware_new(method(:my_handler), { appplication_id: 1234234 })
-  puts "here triggering new_proc"
-  new_proc.call(event: event, context: context)
-end
-
-puts final_handler(event: { nihao: 1234 }, context: { foo: 123412 })
-
-my_hash = { abc: { bar: 2342 } }
-
-my_hash_with_strings = { "abc" => { "bar" => 1111 } }
-
-puts "use string [] #{my_hash_with_strings["abc"]}"
-puts "use string #{my_hash_with_strings.dig("abc", "bar")}"
-puts "dig abc bar #{my_hash.dig(:abc, :bar)}"
-puts "dig abc #{my_hash.dig(:abc)}"
-puts "dig abc foo #{my_hash.dig(:abc, :foo)}"
-puts "dig foo bar #{my_hash.dig(:foo, :bar).nil?}"
-
-puts "fetch abc #{my_hash_with_strings.fetch("abc", "default value")}"
-puts "fetch foo #{my_hash_with_strings.fetch("foo", "default value")}"
