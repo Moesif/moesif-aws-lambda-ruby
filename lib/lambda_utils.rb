@@ -1,13 +1,14 @@
 require "json"
 
 def build_uri(event, context, payload_format_version_1_0)
-  protocol = (event["headers"] || {}).fetch("X-Forwarded-Proto", event["headers"].fetch("x-forwarded-proto", "http")) + "://"
-  host = (event["headers"] || {}).fetch("Host", event["headers"].fetch("host", "localhost"))
+  headers = event["headers"] || {};
+  protocol = headers.fetch("X-Forwarded-Proto", headers.fetch("x-forwarded-proto", "http")) + "://"
+  host = headers.fetch("Host", headers.fetch("host", "localhost"))
 
-  uri = protocal + host
+  uri = protocol + host
 
   if payload_format_version_1_0
-    uri = uri + fetch.get("path", "/")
+    uri = uri + event.fetch.get("path", "/")
     if event.fetch("multiValueQueryStringParameters", {})
       uri = uri + "?" + urlencode(event["multiValueQueryStringParameters"], doseq = True)
     elsif event.fetch("queryStringParameters", {})

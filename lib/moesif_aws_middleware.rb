@@ -40,7 +40,7 @@ module Moesif
     end
 
     def echo_me
-      puts 'echo me'
+      puts 'echo'
     end
 
     def update_user(user_profile)
@@ -169,6 +169,9 @@ module Moesif
         event_req.verb = get_request_verb(event, context, payload_format_version_1_0)
         # to do above.
 
+        # extract below from lambda_result
+        status, rsp_headers, rsp_body, rsp_body_transfer_encoding = get_response_info_from_lambda_result(lambda_result)
+
         if @api_version
           event_req.api_version = @api_version
         end
@@ -197,17 +200,18 @@ module Moesif
           rsp_headers["X-Moesif-Transaction-Id"] = transaction_id
         end
 
-        # Add Transaction Id to the Repsonse Header sent to the client
-        if !transaction_id.nil?
-          headers["X-Moesif-Transaction-Id"] = transaction_id
-        end
+        # TODO: NEED TO FIGURE OUT IF WE NEED TO HANDLE THIS
+        # # Add Transaction Id to the Repsonse Header sent to the client
+        # if !transaction_id.nil?
+        #   headers["X-Moesif-Transaction-Id"] = transaction_id
+        # end
 
         # TODO: extract below from event and context
         event_req.ip_address = get_ip_address(event, context, payload_format_version_1_0)
         event_req.headers = req_headers
 
         if @log_body
-          event_req.body = event.body
+          event_req.body = event["body"]
           event_req.transfer_encoding = event["isBase64Encoded"] ? "base64" : "json"
         end
 
@@ -215,11 +219,8 @@ module Moesif
         event_rsp = MoesifApi::EventResponseModel.new()
         event_rsp.time = end_time
 
-        # TODO:
-        # extract below from lambda_result
-        status, rsp_headers, rsp_body, rsp_body_transfer_encoding = get_response_info_from_lambda_result(lambda_result)
 
-        event_rsp.status = response_
+        event_rsp.status = status
         event_rsp.headers = rsp_headers
 
         if @log_body
@@ -247,7 +248,7 @@ module Moesif
           event_model.metadata = @get_metadata.call(event, context, lambda_result)
         else
           ## get default metadata from context object?
-          event.metadata = {
+          event_model.metadata = {
             "trace_id" => context["aws_request_id"].to_s,
             "function_name" => context["function_name"],
             "request_context" => event["requestContext"],
@@ -269,7 +270,7 @@ module Moesif
 
         # Add Event to the queue
         @events_queue << event_model
-        @moesif_helpers.log_debug("Event added to the queue ")
+        @moesif_helpers.log_debug("Event added to the queue")
         start_worker()
       end
 
@@ -293,16 +294,8 @@ module Moesif
         @moesif_helpers.log_debug "Skipped Event using should_skip configuration option."
       end
 
+      # return original
       lambda_result
-    end
-
-    def get_response_body(response)
-      body = response.respond_to?(:body) ? response.body : response
-      if (body.instance_of?(Hash) || body.instance_of?(Array))
-        return body
-      end
-      body = body.inject("") { |i, a| i << a } if (body.respond_to?(:each) && body.respond_to?(:inject))
-      body.to_s
     end
   end
 end
