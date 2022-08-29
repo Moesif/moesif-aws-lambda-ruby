@@ -36,7 +36,6 @@ module Moesif
       @batch_max_time = options["batch_max_time"] || 2
       @events_queue = Queue.new
       @event_response_config_etag = nil
-      start_worker()
     end
 
     def echo_me
@@ -101,38 +100,27 @@ module Moesif
       return parsed_body, transfer_encoding
     end
 
-    def start_worker
+    def start_worker(event_model)
+      @moesif_helpers.log_debug("start worker is called")
       Thread::new do
         @last_worker_run = Time.now.utc
-        loop do
-          begin
-            until @events_queue.empty?
-              batch_events = []
-              until batch_events.size == @batch_size || @events_queue.empty?
-                batch_events << @events_queue.pop
-              end
-              @moesif_helpers.log_debug("Sending #{batch_events.size.to_s} events to Moesif")
-              event_api_response = @api_controller.create_events_batch(batch_events)
-              @event_response_config_etag = event_api_response[:x_moesif_config_etag]
-              @moesif_helpers.log_debug(event_api_response.to_s)
-              @moesif_helpers.log_debug("Events successfully sent to Moesif")
-            end
+        @moesif_helpers.log_debug("start worker")
 
-            if @events_queue.empty?
-              @moesif_helpers.log_debug("No events to read from the queue")
-            end
-
-            sleep @batch_max_time
-          rescue MoesifApi::APIException => e
-            if e.response_code.between?(401, 403)
-              puts "Unathorized accesss sending event to Moesif. Please verify your Application Id."
-              @moesif_helpers.log_debug(e.to_s)
-            end
-            @moesif_helpers.log_debug("Error sending event to Moesif, with status code #{e.response_code.to_s}")
-          rescue => e
+        begin
+            batch_events = [ event_model ]
+            @moesif_helpers.log_debug("Sending #{batch_events.size.to_s} events to Moesif")
+            event_api_response = @api_controller.create_events_batch(batch_events)
+            @event_response_config_etag = event_api_response[:x_moesif_config_etag]
+            @moesif_helpers.log_debug(event_api_response.to_s)
+            @moesif_helpers.log_debug("Events successfully sent to Moesif")
+        rescue MoesifApi::APIException => e
+          if e.response_code.between?(401, 403)
+            puts "Unathorized accesss sending event to Moesif. Please verify your Application Id."
             @moesif_helpers.log_debug(e.to_s)
           end
+          @moesif_helpers.log_debug("Error sending event to Moesif, with status code #{e.response_code.to_s}")
         end
+
       end
     end
 
@@ -269,10 +257,12 @@ module Moesif
         @moesif_helpers.log_debug event_model.to_json
 
         # Add Event to the queue
-        @events_queue << event_model
-        @moesif_helpers.log_debug("Event added to the queue")
-        start_worker()
-      end
+        # @events_queue << event_model
+        # @moesif_helpers.log_debug("Event added to the queue")
+
+        # send event directly
+        start_worker(event_model)
+      end # end process_send
 
       should_skip = false
 
@@ -294,7 +284,7 @@ module Moesif
         @moesif_helpers.log_debug "Skipped Event using should_skip configuration option."
       end
 
-      # return original
+      # return original result
       lambda_result
     end
   end
