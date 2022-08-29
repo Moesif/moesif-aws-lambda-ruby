@@ -102,7 +102,7 @@ module Moesif
 
     def start_worker(event_model)
       @moesif_helpers.log_debug("start worker is called")
-      Thread::new do
+      thr = Thread::new do
         @last_worker_run = Time.now.utc
         @moesif_helpers.log_debug("start worker")
 
@@ -118,10 +118,12 @@ module Moesif
             puts "Unathorized accesss sending event to Moesif. Please verify your Application Id."
             @moesif_helpers.log_debug(e.to_s)
           end
-          @moesif_helpers.log_debug("Error sending event to Moesif, with status code #{e.response_code.to_s}")
+          @moesif_helpers.log_debug("Error sending event to Moesif, with status code #{e.response_code.to_s} #{e.to_s}")
         end
 
       end
+
+      thr.join
     end
 
     def handle(event:, context:)
@@ -235,13 +237,17 @@ module Moesif
           @moesif_helpers.log_debug "calling get_metadata proc"
           event_model.metadata = @get_metadata.call(event, context, lambda_result)
         else
+          @moesif_helpers.log_debug "create default metadata"
           ## get default metadata from context object?
+          contextHash = {}
+          context.instance_variables.each {|var| contextHash[var.to_s.delete("@")] = context.instance_variable_get(var) }
           event_model.metadata = {
-            "trace_id" => context["aws_request_id"].to_s,
-            "function_name" => context["function_name"],
+            "trace_id" => context.aws_request_id.to_s,
+            "function_name" => context.function_name,
             "request_context" => event["requestContext"],
-            "context" => context,
+            "context" => contextHash
           }
+          @moesif_helpers.log_debug JSON.generate(event_model.metadata)
         end
 
         if @identify_session
