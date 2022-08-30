@@ -54,7 +54,8 @@ end
 
 def get_response_info_from_lambda_result(lambda_result)
   if lambda_result.is_a?(Hash) and lambda_result.include?("statucCode")
-    status = lambda_result["statusCode"]
+    raw_status = lambda_result["statusCode"]
+    status = raw_status.to_i
     rsp_body = lambda_result["body"]
     rsp_headers = lambda_result["headers"]
     if lambda_result.includes?("multiValueHeaders")
@@ -67,7 +68,7 @@ def get_response_info_from_lambda_result(lambda_result)
   else
     # see here on how API gateway interpreate lambda_results when no status code.
     # https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
-    status = lambda_result["statusCode"]
+    status = 200
     rsp_headers = { "content-type" => "application/json" }
     begin
       rsp_body = JSON.generate(lambda_result)
