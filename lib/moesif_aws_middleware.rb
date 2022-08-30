@@ -35,10 +35,6 @@ module Moesif
       @event_response_config_etag = nil
     end
 
-    def echo_me
-      puts 'echo'
-    end
-
     def update_user(user_profile)
       UserHelper.new.update_user(@api_controller, @debug, user_profile)
     end
@@ -196,13 +192,6 @@ module Moesif
           rsp_headers["X-Moesif-Transaction-Id"] = transaction_id
         end
 
-        # TODO: NEED TO FIGURE OUT IF WE NEED TO HANDLE THIS
-        # # Add Transaction Id to the Repsonse Header sent to the client
-        # if !transaction_id.nil?
-        #   headers["X-Moesif-Transaction-Id"] = transaction_id
-        # end
-
-        # TODO: extract below from event and context
         event_req.ip_address = get_ip_address(event, context, payload_format_version_1_0)
         event_req.headers = req_headers
 
