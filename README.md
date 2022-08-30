@@ -43,7 +43,8 @@ $moesif_middleware = Moesif::MoesifAwsMiddleware.new(method(:your_original_handl
 
 ### 2. create a wrapped handler and set AWS lambda to use this.
 
-```Ruby
+
+```ruby
 def wrapped_handler(event:, context:)
   $moesif_middleware.handle(event: event, context: context);
 end
@@ -143,7 +144,8 @@ moesif_options['mask_data'] = Proc.new { |event_model|
 
 ```
 
-For details for the spec of moesif event model, please see the [moesifapi-ruby](https://github.com/Moesif/moesifapi-ruby)
+For details for the spec of moesif event model, please see the [moesifapi-ruby](https://github.com/Moesif/moesifapi-ruby) or [Moesif Ruby API Documentation](https://www.moesif.com/docs/api?ruby)
+
 
 #### __`skip`__
 
@@ -163,7 +165,6 @@ moesif_options['skip'] = Proc.new { |event, context, result|
 
 ```
 
-For details for the spec of event model, please see the [Moesif Ruby API Documentation](https://www.moesif.com/docs/api?ruby)
 
 
 #### __`debug`__
@@ -214,4 +215,4 @@ $LOAD_PATH.unshift(*load_paths)
 
 [link-built-for]: https://aws.amazon.com/lambda/
 [link-license]: https://raw.githubusercontent.com/Moesif/moesif-aws-lambda-ruby/master/LICENSE
-[link-source]: https://github.com/moesif/moesif-aws-lambda-python
+[link-source]: https://github.com/moesif/moesif-aws-lambda-ruby
