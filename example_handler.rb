@@ -6,7 +6,7 @@ $LOAD_PATH.unshift(*load_paths)
 
 require "json"
 require "time"
-require "moesif_aws_middleware"
+require "moesif_aws_lambda"
 
 ## This is your original handler
 def my_handler(event:, context:)
