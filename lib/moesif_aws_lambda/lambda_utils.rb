@@ -58,7 +58,7 @@ def get_response_info_from_lambda_result(lambda_result)
     status = raw_status.to_i
     rsp_body = lambda_result["body"]
     rsp_headers = lambda_result["headers"]
-    if lambda_result.includes?("multiValueHeaders")
+    if lambda_result.include?("multiValueHeaders")
       multi_value_headers = (lambda_result["multiValueHeaders"] || {}).transform_values do |value|
         value.join("\n")
       end
