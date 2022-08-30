@@ -53,7 +53,7 @@ def get_ip_address(event, context, payload_format_version_1_0)
 end
 
 def get_response_info_from_lambda_result(lambda_result)
-  if lambda_result.is_a?(Hash) and lambda_result.include?("statucCode")
+  if lambda_result.is_a?(Hash) and lambda_result.include?("statusCode")
     raw_status = lambda_result["statusCode"]
     status = raw_status.to_i
     rsp_body = lambda_result["body"]
