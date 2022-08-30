@@ -63,10 +63,6 @@ module Moesif
       Zlib::GzipReader.new(StringIO.new(body)).read
     end
 
-    def transform_headers(headers)
-      Hash[headers.map { |k, v| [k.downcase, v] }]
-    end
-
     def base64_encode_body(body)
       return Base64.encode64(body), "base64"
     end
