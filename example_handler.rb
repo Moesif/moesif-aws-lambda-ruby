@@ -1,3 +1,4 @@
+## please modify this load path how your installed the gems.
 load_paths = Dir[
   "./vendor/bundle/ruby/2.6.0/gems/**/lib"
 ]

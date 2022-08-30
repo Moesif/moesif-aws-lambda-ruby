@@ -32,9 +32,6 @@ module Moesif
       @last_worker_run = Time.now.utc
       @disable_transaction_id = options["disable_transaction_id"] || false
       @log_body = options.fetch("log_body", true)
-      @batch_size = options["batch_size"] || 25
-      @batch_max_time = options["batch_max_time"] || 2
-      @events_queue = Queue.new
       @event_response_config_etag = nil
     end
 
@@ -274,10 +271,6 @@ module Moesif
 
         @moesif_helpers.log_debug "sending data to moesif"
         @moesif_helpers.log_debug event_model.to_json
-
-        # Add Event to the queue
-        # @events_queue << event_model
-        # @moesif_helpers.log_debug("Event added to the queue")
 
         # send event directly
         start_worker(event_model)
