@@ -183,7 +183,7 @@ If you wish to update User or Company profile when needed using this SDK, you ca
 $moesif_middleware.update_user(user_profile)
 $moesif_middleware.update_user_batch(user_profiles)
 $moesif_middleware.update_company(company_profile)
-$moesif_middleware.update_company(company_profiles)
+$moesif_middleware.update_company_batch(company_profiles)
 ```
 
 For details regarding shape of the profiles, please see the [Moesif Ruby API Documentation](https://www.moesif.com/docs/api?ruby)
