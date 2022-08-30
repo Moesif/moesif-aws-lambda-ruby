@@ -33,14 +33,12 @@ def my_handler(event:, context:)
     { event: JSON.generate(event), context: JSON.generate(context.inspect), my_test: 12342 }
   end
 end
-def
 
 ## This creates the moesif_middleware instance that wraps your original handler
 $moesif_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
   "application_id" => 'Your Moesif Application Id',
   "debug" => true,
 })
-
 
 ## This wrapped handler is what you set as the new handler in your aws lambda settings
 def wrapped_handler(event:, context:)
