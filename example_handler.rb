@@ -1,4 +1,4 @@
-## please modify this load path how your installed the gems.
+## modify the load path to reflect how your installed the gems before zip and upload to aws lambda
 load_paths = Dir[
   "./vendor/bundle/ruby/2.6.0/gems/**/lib"
 ]
@@ -12,9 +12,9 @@ require_relative "./lib/moesif_aws_middleware";
 def my_handler(event:, context:)
   if event["body"]
     if (event["body"] === "raise")
-      # example where original handler have an error.
+      # an example where original handler have an error.
       # moesif middleware will still capture the call
-      # but pass on the error.
+      # and propogate the exception.
       random = event.none_exist_method
     else
       # an example where original handler uses the standard format for lambda result
@@ -43,7 +43,6 @@ $moesif_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
 
 
 ## This wrapped handler is what you set as the new handler in your aws lambda settings
-
 def wrapped_handler(event:, context:)
   $moesif_middleware.handle(event: event, context: context);
 end
