@@ -141,13 +141,12 @@ module Moesif
       end_time = Time.now.utc.iso8601(3)
 
       process_send = lambda do
+        # REQUEST
         event_req = MoesifApi::EventRequestModel.new()
 
-        # TODO: fill below with event and context.
         event_req.time = start_time
         event_req.uri = build_uri(event, context, payload_format_version_1_0)
         event_req.verb = get_request_verb(event, context, payload_format_version_1_0)
-        # to do above.
 
         # extract below from lambda_result
         if execution_error
@@ -184,11 +183,6 @@ module Moesif
           end
         end
 
-        # Add Transaction Id to the Response Header
-        if !transaction_id.nil?
-          rsp_headers["X-Moesif-Transaction-Id"] = transaction_id
-        end
-
         event_req.ip_address = get_ip_address(event, context, payload_format_version_1_0)
         event_req.headers = req_headers
 
@@ -201,6 +195,10 @@ module Moesif
         event_rsp = MoesifApi::EventResponseModel.new()
         event_rsp.time = end_time
 
+        # Add Transaction Id to the Response Header
+        if !transaction_id.nil?
+          rsp_headers["X-Moesif-Transaction-Id"] = transaction_id
+        end
 
         event_rsp.status = status
         event_rsp.headers = rsp_headers
