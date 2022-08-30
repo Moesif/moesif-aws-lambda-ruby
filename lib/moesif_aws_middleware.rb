@@ -29,7 +29,6 @@ module Moesif
       @skip = options["skip"]
       @debug = options["debug"]
       @moesif_helpers = MoesifHelpers.new(@debug)
-      @last_worker_run = Time.now.utc
       @disable_transaction_id = options["disable_transaction_id"] || false
       @log_body = options.fetch("log_body", true)
       @event_response_config_etag = nil
@@ -90,9 +89,7 @@ module Moesif
     end
 
     def start_worker(event_model)
-      @moesif_helpers.log_debug("start worker is called")
       thr = Thread::new do
-        @last_worker_run = Time.now.utc
         @moesif_helpers.log_debug("start worker")
 
         begin
