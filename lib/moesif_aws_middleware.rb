@@ -146,7 +146,11 @@ module Moesif
 
       @moesif_helpers.log_debug("Calling Moesif middleware")
 
-      lambda_result = @handler.call(event: event, context: context)
+      begin
+        lambda_result = @handler.call(event: event, context: context)
+      rescue Exception => customer_exception
+        execution_error = customer_exception
+      end
 
       end_time = Time.now.utc.iso8601(3)
 
@@ -160,7 +164,16 @@ module Moesif
         # to do above.
 
         # extract below from lambda_result
-        status, rsp_headers, rsp_body, rsp_body_transfer_encoding = get_response_info_from_lambda_result(lambda_result)
+        if execution_error
+          # so we can still continue
+          @moesif_helpers.log_debug("an exception occured with original execution, so capture that.")
+          status = 500
+          rsp_body = { "message" => "Internal Server Error" }
+          rsp_headers = {}
+          rsp_body_transfer_encoding = nil
+        else
+          status, rsp_headers, rsp_body, rsp_body_transfer_encoding = get_response_info_from_lambda_result(lambda_result)
+        end
 
         if @api_version
           event_req.api_version = @api_version
@@ -291,7 +304,14 @@ module Moesif
       end
 
       # return original result
-      lambda_result
+      # or raise original exception
+      if execution_error
+        @moesif_helpers.log_debug "raise original exception that happened."
+        raise execution_error
+      else
+        @moesif_helpers.log_debug "return original lambda result."
+        lambda_result
+      end
     end
   end
 end
