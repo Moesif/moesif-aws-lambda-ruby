@@ -12,9 +12,12 @@ require_relative "./lib/moesif_aws_middleware";
 def my_handler(event:, context:)
   if event["body"]
     if (event["body"] === "raise")
-      # should cause an error
+      # example where original handler have an error.
+      # moesif middleware will still capture the call
+      # but pass on the error.
       random = event.none_exist_method
     else
+      # an example where original handler uses the standard format for lambda result
       {
         "isBase64Encoded": false,
         "statusCode" => 201,
@@ -25,10 +28,12 @@ def my_handler(event:, context:)
       }
     end
   else
+    # an example where orginal handler do not return statusCode
+    # API gateway will have interpret as 200 and entire json as body
     { event: JSON.generate(event), context: JSON.generate(context.inspect), my_test: 12342 }
   end
 end
-
+def
 
 ## This creates the moesif_middleware instance that wraps your original handler
 $moesif_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
