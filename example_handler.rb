@@ -21,9 +21,9 @@ def my_handler(event:, context:)
       {
         "isBase64Encoded": false,
         "statusCode" => 201,
-        "body" => JSON.generate({ "originalEvent" => event, "my_time" => Time.now.utc.iso8601(3) }),
+        "body" => JSON.generate({ "originalEvent" => event, "my_time" => Time.now.utc.iso8601(3), "message": "hello" }),
         "headers" =>  {
-        "content-type" => "application/json"
+          "content-type" => "application/json"
         }
       }
     end
@@ -36,8 +36,13 @@ end
 
 ## This creates the moesif_middleware instance that wraps your original handler
 $moesif_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
-  "application_id" => 'Your Moesif Application Id',
+  "application_id" => 'Your Applicaiton Id',
   "debug" => true,
+  "identify_user" => Proc.new { |event, context, result|
+    # Add your custom code that returns a string for user id
+    puts "identify user is called"
+    'user_id_12345'
+  }
 })
 
 ## This wrapped handler is what you set as the new handler in your aws lambda settings
