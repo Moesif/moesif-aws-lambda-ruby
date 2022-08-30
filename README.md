@@ -25,7 +25,7 @@ bundle install moesif_aws_lambda
 
 ```ruby
 
-def your_original_handler(event: context)
+def your_original_handler(event:, context:)
    # your code
 end
 
