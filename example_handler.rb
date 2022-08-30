@@ -42,7 +42,7 @@ $moesif_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
 })
 
 
-## This wrapped handler is what you set as the new handler in your aws lambda settigns
+## This wrapped handler is what you set as the new handler in your aws lambda settings
 
 def wrapped_handler(event:, context:)
   $moesif_middleware.handle(event: event, context: context);
