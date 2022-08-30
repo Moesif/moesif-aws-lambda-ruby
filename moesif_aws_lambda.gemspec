@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.name = 'moesif_aws_lamda'
+  s.name = 'moesif_aws_lambda'
   s.version = '1.0.0'
   s.summary = 'moesif_aws_lambda'
   s.description = 'Moesif aws lambda middleware for Ruby to log API calls to Moesif API analytics and monitoring'
