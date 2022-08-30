@@ -208,10 +208,6 @@ $LOAD_PATH.unshift(*load_paths)
 `example_handler.rb` is an example file that implement this.
 
 
-
-
-
-
 [ico-built-for]: https://img.shields.io/badge/built%20for-aws%20lambda-blue.svg
 [ico-license]: https://img.shields.io/badge/License-Apache%202.0-green.svg
 [ico-source]: https://img.shields.io/github/last-commit/moesif/moesif-aws-lambda-ruby.svg?style=social

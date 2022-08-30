@@ -2,7 +2,7 @@ Gem::Specification.new do |s|
   s.name = 'moesif_aws_lamda'
   s.version = '1.0.0'
   s.summary = 'moesif_aws_lambda'
-  s.description = 'Moesif aws lambda middleware to log API calls to Moesif API analytics and monitoring'
+  s.description = 'Moesif aws lambda middleware for Ruby to log API calls to Moesif API analytics and monitoring'
   s.authors = ['Moesif, Inc', 'Xing Wang']
   s.email = 'xing@moesif.com'
   s.homepage = 'https://moesif.com'
@@ -13,13 +13,12 @@ Gem::Specification.new do |s|
   s.files = Dir['{bin,lib,moesif_capture_outgoing,man,test,spec}/**/*', 'README*', 'LICENSE*']
   s.require_paths = ['lib']
   s.metadata = {
-    "bug_tracker_uri"   => "https://github.com/Moesif/moesif-rack/issues",
-    "changelog_uri"     => "https://github.com/Moesif/moesif-rack/releases",
-    "documentation_uri" => "https://www.moesif.com/docs/server-integration/rack/",
+    "bug_tracker_uri"   => "https://github.com/Moesif/moesif-aws-lambda-ruby/issues",
+    "changelog_uri"     => "https://github.com/Moesif/moesif-aws-lambda-ruby/releases",
+    "documentation_uri" => "https://github.com/Moesif/moesif-aws-lambda-ruby",
     "homepage_uri"      => "https://www.moesif.com",
-    "mailing_list_uri"  => "https://github.com/Moesif/moesif-rack",
-    "source_code_uri"   => "https://github.com/Moesif/moesif-rack",
-    "wiki_uri"          => "https://github.com/Moesif/moesif-rack"
+    "mailing_list_uri"  => "https://github.com/Moesif/moesif-aws-lambda-ruby",
+    "source_code_uri"   => "https://github.com/Moesif/moesif-aws-lambda-ruby",
+    "wiki_uri"          => "https://github.com/Moesif/moesif-aws-lambda-ruby"
   }
-
 end
