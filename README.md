@@ -70,6 +70,8 @@ Optional. String. Tag requests with the version of your API.
 Optional.
 identify_user is a Proc that takes event, context, and lambda result as arguments and returns a user_id string. This helps us attribute requests to unique users. Even though Moesif can automatically retrieve the user_id without this, this is highly recommended to ensure accurate attribution.
 
+The lambda result is the return result from your original handler.
+
 ```ruby
 moesif_options['identify_user'] = Proc.new { |event, context, result|
 
@@ -85,7 +87,7 @@ Optional.
 identify_company returns a company_id string. This helps us attribute requests to unique company.
 
 ```ruby
-moesif_options['identify_company'] = Proc.new { |event, context,  body|
+moesif_options['identify_company'] = Proc.new { |event, context, result|
 
   # Add your custom code that returns a string for company id
   '67890'
