@@ -70,7 +70,7 @@ Optional. String. Tag requests with the version of your API.
 Optional.
 identify_user is a Proc that takes event, context, and lambda result as arguments and returns a user_id string. This helps us attribute requests to unique users. Even though Moesif can automatically retrieve the user_id without this, this is highly recommended to ensure accurate attribution.
 
-The lambda result is the return result from your original handler.
+`event` and `context` are original lambda input params, and `result` is the return result from your own original lambda handler.
 
 ```ruby
 moesif_options['identify_user'] = Proc.new { |event, context, result|
@@ -130,6 +130,7 @@ moesif_options['get_metadata'] = Proc.new { |event, context, result|
 #### __`mask_data`__
 
 Optional. A Proc that takes event_model as an argument and returns event_model.
+
 With mask_data, you can make modifications to headers or body of the event before it is sent to Moesif.
 
 ```ruby
@@ -142,7 +143,7 @@ moesif_options['mask_data'] = Proc.new { |event_model|
 
 ```
 
-For details for the spec of event model, please see the [moesifapi-ruby](https://github.com/Moesif/moesifapi-ruby)
+For details for the spec of moesif event model, please see the [moesifapi-ruby](https://github.com/Moesif/moesifapi-ruby)
 
 #### __`skip`__
 
@@ -191,10 +192,9 @@ For details regarding shape of the profiles, please see the [Moesif Ruby API Doc
 ## Notes Regarding Bundling Your Gem Files
 
 For AWS lambda with ruby, you have to bundle the gem dependencies into the zip file.
-
 https://docs.aws.amazon.com/lambda/latest/dg/ruby-package.html
 
-In your ruby main file, you may have to use something like this to tell where the dependencies are installed:
+In your ruby main file, you may have to specify where the dependencies are installed:
 
 ```ruby
 load_paths = Dir[
