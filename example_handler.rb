@@ -36,7 +36,7 @@ end
 
 ## This creates the moesif_middleware instance that wraps your original handler
 $moesif_middleware = Moesif::MoesifAwsMiddleware.new(method(:my_handler), {
-  "application_id" => 'Your Applicaiton Id',
+  "application_id" => 'Your Application Id',
   "debug" => true,
   "identify_user" => Proc.new { |event, context, result|
     # Add your custom code that returns a string for user id
