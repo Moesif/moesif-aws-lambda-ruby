@@ -62,13 +62,59 @@ module Moesif
       return Base64.encode64(body), "base64"
     end
 
+    def is_base64_str(body)
+      if not body.instance_of?(String)
+        return false
+      end
+      if body.length % 4 != 0
+        return false
+      end
+
+      b64_regex = /^[A-Za-z0-9+\/]+={0,2}$/
+
+      if not body.match?(b64_regex)
+        return false
+      end
+
+      begin
+        _ = Base64.decode64(body)
+        return true
+      rescue
+        return false
+      end
+
+    end
+
     def @moesif_helpers.log_debug(message)
       if @debug
         puts("#{Time.now.to_s} [Moesif Middleware] PID #{Process.pid} TID #{Thread.current.object_id} #{message}")
       end
     end
 
-    def parse_body(body, headers)
+    def process_body(body_wrapper, headers)
+      # the `event` object can either be a Hash or a String
+      if body_wrapper.instance_of?(Hash)
+        if body_wrapper.key?("body")
+          begin
+            if body_wrapper.fetch("isBase64Encoded", false) and is_base64_str(body_wrapper.fetch("body"))
+              return body_wrapper.fetch("body"), "base64"
+            else
+              return safe_json_parse(body_wrapper.fetch("body"), headers)
+            end
+            rescue
+              return base64_encode_body(body_wrapper.fetch("body"))
+          end
+        else
+          return nil, "json"
+        end
+      elsif body_wrapper.instance_of?(String)
+        return base64_encode_body(String)
+      else
+        return nil, "json"
+      end
+    end
+
+    def safe_json_parse(body, headers)
       begin
         if (body.instance_of?(Hash) || body.instance_of?(Array))
           parsed_body = body
@@ -187,8 +233,12 @@ module Moesif
         event_req.headers = req_headers
 
         if @log_body
-          event_req.body = event["body"]
-          event_req.transfer_encoding = event["isBase64Encoded"] ? "base64" : "json"
+          if event.key?("body") and event.fetch("isBase64Encoded") and is_base64_str(event.fetch("body"))
+            event_req.body= event.fetch("body") 
+            event_req.transfer_encoding = "base64"
+          else
+            event_req.body, event_req.transfer_encoding = process_body(event, req_headers)
+          end
         end
 
         # RESPONSEE
