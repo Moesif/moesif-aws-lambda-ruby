@@ -1,26 +1,50 @@
-# Moesif AWS Lambda Middleware Ruby
+# Moesif AWS Lambda Middleware for Ruby
+by [Moesif](https://moesif.com), the [API analytics](https://www.moesif.com/features/api-analytics) and [API monetization](https://www.moesif.com/solutions/metered-api-billing) platform.
 
 [![Built For][ico-built-for]][link-built-for]
 [![Software License][ico-license]][link-license]
 [![Source Code][ico-source]][link-source]
 
-Middleware (Ruby) to automatically log API calls from AWS Lambda functions and sends
-and sends to [Moesif](https://www.moesif.com) for API analytics.
+With Moesif Ruby middleware for AWS Lambda, you can automatically log API calls 
+and send them to [Moesif](https://www.moesif.com) for API analytics and monitoring.
+This middleware allows you to integrate Moesif's API analytics and 
+API monetization features into your Ruby applications with minimal configuration.
+
+> If you're new to Moesif, see [our Getting Started](https://www.moesif.com/docs/) resources to quickly get up and running.
 
 This middleware expects the
 [Lambda proxy integration type.](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-set-up-simple-proxy.html#api-gateway-set-up-lambda-proxy-integration-on-proxy-resource)
 If you're using AWS Lambda with API Gateway, you are most likely using the proxy integration type.
 
+## Prerequisites
+Before using this middleware, make sure you have the following:
 
-## How to install
+- [An active Moesif account](https://moesif.com/wrap)
+- [A Moesif Application ID](#get-your-moesif-application-id)
+
+### Get Your Moesif Application ID
+After you log into [Moesif Portal](https://www.moesif.com/wrap), you can get your Moesif Application ID during the onboarding steps. You can always access the Application ID any time by following these steps from Moesif Portal after logging in:
+
+1. Select the account icon to bring up the settings menu.
+2. Select **Installation** or **API Keys**.
+3. Copy your Moesif Application ID from the **Collector Application ID** field.
+
+<img class="lazyload blur-up" src="images/app_id.png" width="700" alt="Accessing the settings menu in Moesif Portal">
+
+## Install the Middleware
+
+Install with [Bundler](https://bundler.io/):
 
 ```shell
 bundle install moesif_aws_lambda
 ```
 
+## Configure the Middleware
+See the available [configuration options](#configuration-options) to learn how to configure the middleware for your use case. 
+
 ## How to use
 
-### 1. Wrap your original lambda handler with Moesif Middleware
+### 1. Wrap your Original Lambda handler with Moesif Middleware
 
 
 ```ruby
@@ -41,7 +65,7 @@ $moesif_middleware = Moesif::MoesifAwsMiddleware.new(method(:your_original_handl
 ```
 
 
-### 2. create a wrapped handler and set AWS lambda to use this.
+### 2. Create a Wrapped Handler and Set it to the Function Handler Name
 
 
 ```ruby
@@ -50,28 +74,83 @@ def wrapped_handler(event:, context:)
 end
 ```
 
-configure AWS Lambda handler to `wrapped_handler` instead.
+Then set the AWS Lambda handler name to `wrapped_handler` instead. For more information, see [Define Lambda function handler in Ruby](https://docs.aws.amazon.com/lambda/latest/dg/ruby-handler.html?icmpid=docs_lambda_help).
 
+## Troubleshoot
+For a general troubleshooting guide that can help you solve common problems, see [Server Troubleshooting Guide](https://www.moesif.com/docs/troubleshooting/server-troubleshooting-guide/).
+
+Other troubleshooting supports:
+
+- [FAQ](https://www.moesif.com/docs/faq/)
+- [Moesif support email](mailto:support@moesif.com)
 
 ## Configuration Options
+The following sections describe the available configuration options for this middleware. You must set these options in a Ruby `Hash` object when you create the middleware instance. See the sample Lambda handler function code in `example_handler.rb` for better understanding.
 
-#### __`application_id`__
+### __`application_id`__ (Required)
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
 
-Required. String. This is the Moesif application_id under settings
-from your [Moesif account.](https://www.moesif.com)
+A string that [identifies your application in Moesif](#get-your-moesif-application-id).
 
+### __`api_version`__
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
 
-#### __`api_version`__
+Optional.
 
-Optional. String. Tag requests with the version of your API.
+Use it to tag requests with the version of your API.
 
 
 #### __`identify_user`__
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    <code>Proc</code>
+   </td>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
 
-Optional.
-identify_user is a Proc that takes event, context, and lambda result as arguments and returns a user_id string. This helps us attribute requests to unique users. Even though Moesif can automatically retrieve the user_id without this, this is highly recommended to ensure accurate attribution.
+Optional, but highly recommended.
 
-`event` and `context` are original lambda input params, and `result` is the return result from your own original lambda handler.
+A `Proc` that takes the event, context, and Lambda result as arguments.
+
+Returns a string that represents the user ID used by your system. 
+
+Moesif identifies users automatically. However, due to the differences arising from different frameworks and implementations, set this option to ensure user identification properly.
+
+In the following code snippet, `event` and `context` are original Lambda handler's input parameters. `result` is the return result from your own original Lambda handler.
 
 ```ruby
 moesif_options['identify_user'] = Proc.new { |event, context, result|
@@ -83,9 +162,31 @@ moesif_options['identify_user'] = Proc.new { |event, context, result|
 ```
 
 #### __`identify_company`__
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    <code>Proc</code>
+   </td>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
 
 Optional.
-identify_company returns a company_id string. This helps us attribute requests to unique company.
+
+A `Proc` that takes the event, context, and Lambda result as arguments.
+
+
+Returns a string that represents the company ID for this event. This helps Moesif attribute requests to unique company.
 
 ```ruby
 moesif_options['identify_company'] = Proc.new { |event, context, result|
@@ -97,8 +198,30 @@ moesif_options['identify_company'] = Proc.new { |event, context, result|
 ```
 
 #### __`identify_session`__
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    <code>Proc</code>
+   </td>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
 
-Optional. A Proc that takes env, headers, body and returns a string.
+A `Proc` that takes `env`, `headers`, and `body` as arguments.
+
+Returns a string that represents the session token for this event. 
+
+Similar to users and companies, Moesif tries to retrieve session tokens automatically. But if it doesn't work for your service, use this option to help identify sessions.
 
 ```ruby
 
@@ -109,10 +232,30 @@ moesif_options['identify_session'] = Proc.new { |event, context, result|
 ```
 
 #### __`get_metadata`__
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    <code>Proc</code>
+   </td>
+   <td>
+    <code>Hash</code>
+   </td>
+  </tr>
+</table>
 
 Optional.
-get_metadata is a Proc that takes env, headers, and body as arguments and returns a Hash that is
-representation of a JSON object. This allows you to attach any
+
+A `Proc` that takes `env`, `headers`, and `body` as arguments.
+
+Returns a `Hash` that represents a JSON object. This allows you to attach any
 metadata to this event.
 
 ```ruby
@@ -129,10 +272,30 @@ moesif_options['get_metadata'] = Proc.new { |event, context, result|
 
 
 #### __`mask_data`__
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    <code>Proc</code>
+   </td>
+   <td>
+    <code>EventModel</code>
+   </td>
+  </tr>
+</table>
 
-Optional. A Proc that takes event_model as an argument and returns event_model.
+Optional. 
 
-With mask_data, you can make modifications to headers or body of the event before it is sent to Moesif.
+A Proc that takes an `EventModel` as an argument and returns an `EventModel`.
+
+This option allows you to modify headers or body of an event before sending the event to Moesif.
 
 ```ruby
 
@@ -144,12 +307,36 @@ moesif_options['mask_data'] = Proc.new { |event_model|
 
 ```
 
-For details for the spec of moesif event model, please see the [moesifapi-ruby](https://github.com/Moesif/moesifapi-ruby) or [Moesif Ruby API Documentation](https://www.moesif.com/docs/api?ruby)
+For more information and the spec of Moesif's event model, see the source code of [Moesif API library for Ruby](https://github.com/Moesif/moesifapi-ruby) or [Moesif Ruby API documentation](https://www.moesif.com/docs/api?ruby)
 
 
 #### __`skip`__
 
-Optional. A Proc that takes env, headers, body and returns a boolean.
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    <code>Proc</code>
+   </td>
+   <td>
+    Boolean
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A `Proc` that takes `env`, `headers`, and `body` as arguments.
+
+Returns a boolean. Return `true` if you want to skip a particular event.
+
 
 ```ruby
 
@@ -168,17 +355,56 @@ moesif_options['skip'] = Proc.new { |event, context, result|
 
 
 #### __`debug`__
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Boolean
+   </td>
+   <td>
+    <code>false</code>
+   </td>
+  </tr>
+</table>
 
-Optional. Boolean. Default false. If true, it will print out debug messages. In debug mode, the processing is not done in backend thread.
+Optional.
+
+If `true`, the middleware prints out debug messages. In debug mode, the processing is not done in backend thread.
 
 #### __`log_body`__
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Boolean
+   </td>
+   <td>
+    <code>true</code>
+   </td>
+  </tr>
+</table>
 
-Optional. Boolean. Default true. If false, will not log request and response body to Moesif.
+Optional.
 
+If `false`, doesn't log request and response body to Moesif.
 
-## Additional Methods for Updating User and Company Profile
+## Additional Methods for Updating User and Company Profiles
 
-If you wish to update User or Company profile when needed using this SDK, you can also use below methods:
+If you want to update [User](https://www.moesif.com/docs/getting-started/users/) or [Company](https://www.moesif.com/docs/getting-started/companies/) profile using this SDK, use the following methods:
 
 ``` ruby
 $moesif_middleware.update_user(user_profile)
@@ -187,15 +413,18 @@ $moesif_middleware.update_company(company_profile)
 $moesif_middleware.update_company_batch(company_profiles)
 ```
 
-For details regarding shape of the profiles, please see the [Moesif Ruby API Documentation](https://www.moesif.com/docs/api?ruby)
+For information about the structure of profiles, see [Moesif Ruby API documentation](https://www.moesif.com/docs/api?ruby)
+
+## Examples
+
+See `example_handler.rb` that contains an example Lambda handler using this middleware.
 
 
-## Notes Regarding Bundling Your Gem Files
+## Bundling Your Gem Files
 
-For AWS lambda with ruby, you have to bundle the gem dependencies into the zip file.
-https://docs.aws.amazon.com/lambda/latest/dg/ruby-package.html
+For AWS Lambda with Ruby, you have to bundle the gem dependencies into a ZIP file archive. For instructions, see [Deploy Ruby Lambda functions with .zip file archives](https://docs.aws.amazon.com/lambda/latest/dg/ruby-package.html).
 
-In your ruby main file, you may have to specify where the dependencies are installed:
+In the file where you define your Lambda handler, you may have to specify the location of the dependencies:
 
 ```ruby
 load_paths = Dir[
@@ -204,10 +433,15 @@ load_paths = Dir[
 $LOAD_PATH.unshift(*load_paths)
 ```
 
-## Example
+## How to Get Help
+If you face any issues using this middleware, try the [troubheshooting guidelines](#troubleshoot). For further assistance, reach out to our [support team](mailto:support@moesif.com).
 
-`example_handler.rb` is an example file that implement this.
+## Explore Other Integrations
 
+Explore other integration options from Moesif:
+
+- [Server integration options documentation](https://www.moesif.com/docs/server-integration//)
+- [Client integration options documentation](https://www.moesif.com/docs/client-integration/)
 
 [ico-built-for]: https://img.shields.io/badge/built%20for-aws%20lambda-blue.svg
 [ico-license]: https://img.shields.io/badge/License-Apache%202.0-green.svg
