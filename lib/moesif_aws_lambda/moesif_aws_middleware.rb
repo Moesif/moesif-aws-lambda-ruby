@@ -58,8 +58,8 @@ module Moesif
       Zlib::GzipReader.new(StringIO.new(body)).read
     end
 
-    def base64_encode_body(body)
-      return Base64.encode64(body), "base64"
+    def base64_encode_body(data)
+      return Base64.encode64(data), "base64"
     end
 
     def is_base64_str(body)
@@ -93,24 +93,21 @@ module Moesif
 
     def process_body(body_wrapper, headers)
       # the `event` object can either be a Hash or a String
-      if body_wrapper.instance_of?(Hash)
-        if body_wrapper.key?("body")
-          begin
-            if body_wrapper.fetch("isBase64Encoded", false) and is_base64_str(body_wrapper.fetch("body"))
-              return body_wrapper.fetch("body"), "base64"
-            else
-              return safe_json_parse(body_wrapper.fetch("body"), headers)
-            end
-            rescue
-              return base64_encode_body(body_wrapper.fetch("body"))
+      if body_wrapper.instance_of?(Hash) and body_wrapper.key?("body")
+        body = body_wrapper.fetch("body")
+        begin
+          if body_wrapper.fetch("isBase64Encoded", false) and is_base64_str(body)
+            return body, "base64"
+          else
+            return safe_json_parse(body, headers)
           end
-        else
-          return nil, "json"
+          rescue
+            return base64_encode_body(body)
         end
       elsif body_wrapper.instance_of?(String)
-        return base64_encode_body(String)
+        return base64_encode_body(body_wrapper)
       else
-        return nil, "json"
+        return nil, nil
       end
     end
 
