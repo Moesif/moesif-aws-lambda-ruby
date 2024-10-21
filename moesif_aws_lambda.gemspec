@@ -8,6 +8,7 @@ Gem::Specification.new do |s|
   s.homepage = 'https://moesif.com'
   s.license = 'Apache-2.0'
   s.add_development_dependency('test-unit', '~> 3.5', '>= 3.5.0')
+  s.add_development_dependency('rspec', '~> 3.5')
   s.add_dependency('moesif_api', '~> 1.2.14')
   s.required_ruby_version = '>= 2.5'
   s.files = Dir['{lib}/**/*', 'README*', 'LICENSE*']
