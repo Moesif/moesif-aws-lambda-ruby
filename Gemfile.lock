@@ -1,8 +1,8 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.8.1)
-      public_suffix (>= 2.0.2, < 6.0)
+    addressable (2.9.0)
+      public_suffix (>= 2.0.2, < 8.0)
     diff-lcs (1.5.1)
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
@@ -23,7 +23,7 @@ GEM
       json (~> 2.6, >= 2.6.1)
       rest-client (~> 2.1, >= 2.1.0)
     netrc (0.11.0)
-    public_suffix (5.0.0)
+    public_suffix (4.0.7)
     rest-client (2.1.0)
       http-accept (>= 1.7.0, < 2.0)
       http-cookie (>= 1.0.2, < 2.0)
